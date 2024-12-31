@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chord Cards</title>
+  <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+  <header>
+    <h1>Chord Cards</h1>
+  </header>
+  <main>
+    <p><button id="play">PLAY</button></p>
+  </main>
+  <footer>
+    <p>Made with love by Davide Kirchner</p>
+  </footer>
+</body>
+
+<script type="text/javascript">
+function play() {
+  console.log("ciao");
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("play").addEventListener("click", play)
+}, false);
+</script>
+</html>
