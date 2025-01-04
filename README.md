@@ -2,4 +2,4 @@
 
 A web minigame to sharpen your ears.
 
-TODO: write the game :)
+So far only supports 3 chords, no persistent state, no stats, no progress tracking.

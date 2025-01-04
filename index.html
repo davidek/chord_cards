@@ -116,8 +116,9 @@ function correct(chord) {
   document.getElementById("main_correct").style.display = "block";
 }
 
-function wrong(guessed, correct) {
-  console.log("wrong: guessed " + guessed + " but was " + correct);
+function wrong(guessed_elem, correct) {
+  console.log("wrong: guessed " + guessed_elem.dataset.chord + " but was " + correct);
+  guessed_elem.textContent = "X";
 }
 
 function clearListeners(elem) {
@@ -129,10 +130,11 @@ function clearListeners(elem) {
 function guess(chord) {
   console.log("guess " + chord);
 
-  document.querySelectorAll("#main_guess .dot, #replay_btn").forEach(function (elem) {
-    // elem.style.display = "inline-block";
+  document.querySelectorAll("#main_guess .dot").forEach(function (elem) {
+    elem.textContent = "";
     clearListeners(elem);
   });
+  clearListeners(document.getElementById("replay_btn"));
   document.getElementById("replay_btn").addEventListener("click", function () {
     listen(chord);
   }, {once: true})
@@ -142,7 +144,7 @@ function guess(chord) {
   document.querySelectorAll(other_dot_selector).forEach(function (elem) {
     elem.classList.remove("correct");
     elem.addEventListener("click", function (e) {
-      wrong(elem.dataset.chord, chord);
+      wrong(elem, chord);
     }, {once: true});
   });
   current_dot.classList.add("correct");
