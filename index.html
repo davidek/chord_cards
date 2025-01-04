@@ -5,26 +5,279 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chord Cards</title>
   <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+  
+  <script>let FF_FOUC;</script> <!-- FOUC workaround https://stackoverflow.com/questions/21147149 -->
 </head>
 <body>
+
   <header>
     <h1>Chord Cards</h1>
   </header>
   <main>
-    <p><button id="play">PLAY</button></p>
+    <div id="main_start" class="main">
+      <p><button id="play_btn">PLAY</button></p>
+    </div>
+    <div id="main_listen" class="main" style="display: none;">
+      <p>
+        <!-- Ripple from https://loading.io/css/ (licenced as CC0) -->
+        <!-- Was thinking about using it as "now playing" animation, maybe later -->
+        <!--div class="lds-ripple"><div></div><div></div></div-->
+        <audio id="audio_red">
+          <source src="sound/rosso.m4a" type="audio/mp4">
+        </audio>
+        <audio id="audio_yellow">
+          <source src="sound/giallo.m4a" type="audio/mp4">
+        </audio>
+        <audio id="audio_blue">
+          <source src="sound/blu.m4a" type="audio/mp4">
+        </audio>
+      </p>
+    </div>
+    <div id="main_guess" class="main" style="display: none;">
+      <p> 
+        <button id="guess_red" data-chord="red" class="dot dot-red"></button>
+        <button id="guess_yellow" data-chord="yellow" class="dot dot-yellow"></button>
+        <button id="guess_blue" data-chord="blue" class="dot dot-blue"></button>
+      </p>
+      <p>
+        <button id="replay_btn">⟲</button>
+      </p>
+    </div>
+    <div id="main_correct" class="main" style="display: none;">
+      <p> 
+        <button class="dot"></button>
+      </p>
+      <p>
+        <button id="play_again_btn">→</button>
+      </p>
+    </div>
+    <div id="main_loading" class="main" style="display: none;">
+      <!-- Ring from https://loading.io/css/ (licenced as CC0) -->
+      <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+    </div>
   </main>
   <footer>
-    <p>Made with love by Davide Kirchner</p>
+    <p>Made with love by Davide.</p>
   </footer>
 </body>
 
 <script type="text/javascript">
+
+function random_chord() {
+  let chords = ["red", "yellow", "blue"];
+  let i = Math.floor(Math.random() * chords.length);
+  return chords[i];
+}
+
+function loading() {
+  console.log("loading")
+  document.querySelectorAll(".main:not(#main_loading)").forEach(function (elem) {
+    elem.style.display = "none";
+  });
+  document.getElementById("main_loading").style.display = "block";
+}
+
+function listen(chord) {
+  console.log("listen " + chord)
+
+  let current_audio_id = "audio_" + chord;
+  let current_audio = document.getElementById(current_audio_id);
+  let other_audio_selector = "#main_listen audio:not(#"+current_audio_id+")";
+  document.querySelectorAll(other_audio_selector).forEach(function (elem) {
+    elem.removeAttribute("controls");
+  });
+  current_audio.setAttribute("controls", "");
+
+  document.querySelectorAll(".main:not(#main_listen)").forEach(function (elem) {
+    elem.style.display = "none";
+  });
+  document.getElementById("main_listen").style.display = "block";
+  
+  current_audio.play();
+  current_audio.addEventListener("ended", function(elem) {
+    guess(chord);
+  }, {once: true});
+}
+
+function correct(chord) {
+  console.log("correct " + chord);
+
+  let dot = document.querySelector("#main_correct .dot");
+  for (var cl of dot.classList) {
+    if (cl.startsWith("dot-")) {
+      dot.classList.remove(cl);
+    }
+  }
+  dot.classList.add("dot-" + chord);
+
+  document.querySelectorAll(".main:not(#main_correct)").forEach(function (elem) {
+    elem.style.display = "none";
+  });
+  document.getElementById("main_correct").style.display = "block";
+}
+
+function wrong(guessed, correct) {
+  console.log("wrong: guessed " + guessed + " but was " + correct);
+}
+
+function clearListeners(elem) {
+  // apparently this is the most reliable way. Oh well.
+  let new_elem = elem.cloneNode(true);
+  elem.parentNode.replaceChild(new_elem, elem);
+}
+
+function guess(chord) {
+  console.log("guess " + chord);
+
+  document.querySelectorAll("#main_guess .dot, #replay_btn").forEach(function (elem) {
+    // elem.style.display = "inline-block";
+    clearListeners(elem);
+  });
+  document.getElementById("replay_btn").addEventListener("click", function () {
+    listen(chord);
+  }, {once: true})
+  let current_dot_id = "guess_" + chord;
+  let current_dot = document.getElementById(current_dot_id);
+  let other_dot_selector = "#main_guess .dot:not(#"+current_dot_id+")";
+  document.querySelectorAll(other_dot_selector).forEach(function (elem) {
+    elem.classList.remove("correct");
+    elem.addEventListener("click", function (e) {
+      wrong(elem.dataset.chord, chord);
+    }, {once: true});
+  });
+  current_dot.classList.add("correct");
+  current_dot.addEventListener("click", function (elem) {
+    if (chord != current_dot.dataset.chord) {
+      console.warn("oops, correct was " + chord + " but clicked " + current_dot.dataset.chord);
+    }
+    correct(chord);
+  }, {once: true});
+
+  document.querySelectorAll(".main:not(#main_guess)").forEach(function (elem) {
+    elem.style.display = "none";
+  });
+  document.getElementById("main_guess").style.display = "block";
+}
+
 function play() {
-  console.log("ciao");
+  console.log("play");
+  listen(random_chord());
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById("play").addEventListener("click", play)
+  document.getElementById("play_btn").addEventListener("click", play);
+  document.getElementById("play_again_btn").addEventListener("click", play);
 }, false);
 </script>
+<style>
+button.dot {
+  height: 5em;
+  width: 5em;
+  margin-right: 1em;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-red, .dot-red:hover, .dot-red:active {
+  background-color: red !important;
+}
+.dot-blue, .dot-blue:hover, .dot-blue:active {
+  background-color: blue !important;
+}
+.dot-yellow, .dot-yellow:hover, .dot-yellow:active {
+  background-color: yellow !important;
+}
+</style>
+<style>
+/* Ring from https://loading.io/css/ (licenced as CC0) */
+.lds-ring,
+.lds-ring div {
+  box-sizing: border-box;
+}
+.lds-ring {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border: 8px solid currentColor;
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-color: currentColor transparent transparent transparent;
+}
+.lds-ring div:nth-child(1) {
+  animation-delay: -0.45s;
+}
+.lds-ring div:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.lds-ring div:nth-child(3) {
+  animation-delay: -0.15s;
+}
+@keyframes lds-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* Ripple from https://loading.io/css/ (licenced as CC0) */
+.lds-ripple,
+.lds-ripple div {
+  box-sizing: border-box;
+}
+.lds-ripple {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-ripple div {
+  position: absolute;
+  border: 4px solid currentColor;
+  opacity: 1;
+  border-radius: 50%;
+  animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+.lds-ripple div:nth-child(2) {
+  animation-delay: -0.5s;
+}
+@keyframes lds-ripple {
+  0% {
+    top: 36px;
+    left: 36px;
+    width: 8px;
+    height: 8px;
+    opacity: 0;
+  }
+  4.9% {
+    top: 36px;
+    left: 36px;
+    width: 8px;
+    height: 8px;
+    opacity: 0;
+  }
+  5% {
+    top: 36px;
+    left: 36px;
+    width: 8px;
+    height: 8px;
+    opacity: 1;
+  }
+  100% {
+    top: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
+    opacity: 0;
+  }
+}
+</style>
 </html>
